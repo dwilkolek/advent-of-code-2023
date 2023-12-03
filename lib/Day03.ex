@@ -8,12 +8,7 @@ end
 
 defmodule Day03 do
   def solve1(input) do
-    [left, _] = String.split(input, "\n", parts: 2)
-    line_length = String.length(left)
-    continous_input = String.replace(input, "\n", "")
-
-    numbers = find_numbers(continous_input, line_length)
-    symbols = find_symbols(continous_input, line_length)
+    {numbers, symbols} = map_input(input)
 
     symbols
     |> Enum.map(fn sym ->
@@ -27,27 +22,31 @@ defmodule Day03 do
   end
 
   def solve2(input) do
-    [left, _] = String.split(input, "\n", parts: 2)
-    line_length = String.length(left)
-    continous_input = String.replace(input, "\n", "")
-    numbers = find_numbers(continous_input, line_length)
-    symbols = find_symbols(continous_input, line_length)
+    {numbers, symbols} = map_input(input)
 
     symbols
     |> Enum.map(fn sym ->
-
-      matching = Enum.filter(numbers, fn v ->
+      Enum.filter(numbers, fn v ->
         sym.x >= v.x - 1 and sym.x <= v.end_x + 1 and sym.y >= v.y - 1 and sym.y <= v.y + 1
       end)
-
-      if length(matching) == 2 do
-        Enum.reduce(matching, 1, fn v, acc -> acc * v.value end )
-      else
-        0
-      end
-
+    end)
+    |> Enum.filter(fn matches -> length(matches) == 2 end)
+    |> Enum.map(fn match ->
+      Enum.reduce(match, 1, fn v, acc ->
+        acc * v.value
+      end)
     end)
     |> Enum.sum()
+  end
+
+  def map_input(input) do
+    [left, _] = String.split(input, "\n", parts: 2)
+    line_length = String.length(left)
+    continous_input = String.replace(input, "\n", "")
+
+    numbers = find_numbers(continous_input, line_length)
+    symbols = find_symbols(continous_input, line_length)
+    {numbers, symbols}
   end
 
   def find_numbers(input, line_length) do
