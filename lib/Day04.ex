@@ -20,14 +20,11 @@ defmodule Day04 do
 
       matches = Enum.filter(picked_numbers, fn x -> Enum.member?(winning_numbers, x) end)
 
-      result =
-        matches
+      matches
         |> Enum.with_index()
-        |> Enum.reduce(0, fn {_, index}, acc ->
+        |> Enum.reduce(0, fn {_, index}, _ ->
           :math.pow(2, index)
         end)
-
-      result
     end)
     |> Enum.sum()
   end
@@ -43,6 +40,7 @@ defmodule Day04 do
 
         "Card " <> card_id_str = card
         card_id = String.trim(card_id_str)
+
         [winning, picks] =
           points
           |> String.split(" | ", trim: true, parts: 2)
@@ -52,12 +50,8 @@ defmodule Day04 do
 
         matches = Enum.filter(picked_numbers, fn x -> Enum.member?(winning_numbers, x) end)
 
-        # IO.puts("#{card_id}: matches: #{length(matches)}")
-        # IO.inspect(card_id)
         {from, _} = Integer.parse(card_id)
         to = from + length(matches)
-
-        # %{card_id => length(matches)}
         %{card_id => %CardProjection{card_id: card_id, produce: tl(Enum.to_list(from..to))}}
       end)
       |> Enum.reduce(fn m, acc -> Map.merge(acc, m) end)
@@ -66,24 +60,18 @@ defmodule Day04 do
     agg
     |> Enum.map(fn {card_id, _} ->
       x = count_cards(card_id, agg, 0)
-      # IO.puts("#{card_id} scored #{x}")
       x + 1
     end)
     |> IO.inspect()
     |> Enum.sum()
-    # count_cards("1", agg, 0)
     |> IO.inspect()
-    "TOD"
   end
 
   def count_cards(id, agg, level) do
-    # IO.puts("#{id} -> #{length(agg["#{id}"].produce)} @ #{level}")
-
-    result =
-      Enum.map(agg["#{id}"].produce, fn sub_id ->
-        1 + count_cards(sub_id, agg, level + 1)
-      end)
-      |> Enum.sum()
+    Enum.map(agg["#{id}"].produce, fn sub_id ->
+      1 + count_cards(sub_id, agg, level + 1)
+    end)
+    |> Enum.sum()
   end
 end
 
