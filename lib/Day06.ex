@@ -27,7 +27,12 @@ defmodule Day06 do
     time = String.to_integer(String.replace(time_str, " ", ""))
     distance = String.to_integer(String.replace(distance_str, " ", ""))
     [a, b] = find_win_range([0, time], time, distance)
-    b - a + 1
+    searched = b - a + 1
+
+    delta = :math.sqrt(time * time - 4 * (distance + 1))
+    calculated = floor((time + delta) / 2.0) - ceil((time - delta) / 2.0) + 1
+
+    ^searched = calculated
   end
 
   defp find_win_range(range, max_time, min_dist) do
