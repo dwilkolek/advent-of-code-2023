@@ -29,7 +29,7 @@ defmodule Day08 do
       |> Enum.filter(fn pos -> String.ends_with?(pos, "A") end)
 
     Enum.map(starting_positions, fn starting_pos ->
-      {steps, final_pos} =
+      {steps, _final_pos} =
         directions
         |> Stream.cycle()
         |> Enum.reduce_while({0, starting_pos}, fn dir, {step_count, position} ->
