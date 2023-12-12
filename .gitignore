@@ -26,3 +26,5 @@ advent_of_code_2023-*.tar
 /tmp/
 
 .elixir_ls/
+
+.idea
