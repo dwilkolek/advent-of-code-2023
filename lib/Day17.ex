@@ -10,7 +10,8 @@ defmodule Day17 do
     [1]
     |> Stream.cycle()
     |> Enum.reduce_while({@top_limit, [start]}, fn _, {min, queue} ->
-      new_queue = queue |> Enum.map(fn state -> next_step(state, map, size) end) |> List.flatten()
+      new_queue =
+        queue |> Enum.map(fn state -> next_step(state, map, size, 4, 10) end) |> List.flatten()
 
       {new_min, history, s} =
         new_queue
@@ -57,9 +58,11 @@ defmodule Day17 do
     {x, y, {last_dir, steps}}
   end
 
-  def next_step(state, map, size) do
+  def next_step(state, map, size, min_steps, max_steps) do
     {x, y, points, last_pos_hist, last_dir_steps} = state
     last_pos = hd(last_pos_hist)
+
+    {last_dir, steps} = hd(last_dir_steps)
 
     if x == size - 1 && y == size - 1 do
       best = Process.get(cache_key(state), @top_limit)
@@ -67,22 +70,34 @@ defmodule Day17 do
     end
 
     if Process.get(cache_key(state), @top_limit) >= points do
-      [{0, 1}, {1, 0}, {0, -1}, {-1, 0}]
+      possible_moves =
+        if(steps <= min_steps - 1 && last_dir != {-1, -1},
+          do: [last_dir],
+          else: [{0, 1}, {1, 0}, {0, -1}, {-1, 0}]
+        )
+
+      if {x, y} == {8, 4} do
+        IO.inspect("MOVES steps:#{steps} min:#{min_steps} 1:#{steps <= min_steps}, 2:#{last_dir != {-1, -1}}")
+        IO.inspect(last_pos_hist)
+        IO.inspect(last_dir_steps)
+        IO.inspect(possible_moves)
+      end
+
+      possible_moves
       |> Enum.map(fn dir ->
         {dir_x, dir_y} = dir
-        {last_dir, steps} = hd(last_dir_steps)
         cost = map[{x + dir_x, y + dir_y}]
         # IO.puts("{{")
         # IO.inspect(last_dir)
         # IO.inspect(dir)
 
-        n_steps = if last_dir == dir, do: steps + 1, else: 0
+        n_steps = if last_dir == dir, do: steps + 1, else: 1
         # IO.inspect(n_steps)
         # IO.puts("}}")
         n_last_dir_steps =
           if last_dir == dir,
             do: [{last_dir, n_steps} | tl(last_dir_steps)],
-            else: [{dir, 0} | last_dir_steps]
+            else: [{dir, n_steps} | last_dir_steps]
 
         next_best = points + (cost || @top_limit)
 
@@ -93,10 +108,24 @@ defmodule Day17 do
            n_last_dir_steps}
 
         best = Process.get(cache_key(next_state), @top_limit)
+        # IO.puts("DEBUG: #{cost} & #{n_steps < max_steps} & #{!goes_back} & #{next_best < best}")
 
-        if cost != nil && n_steps <= 2 && !goes_back && next_best < best do
+        if cost != nil && n_steps < max_steps && !goes_back && next_best < best do
+          # if (n_steps >= min_steps) do
           Process.put(cache_key(next_state), next_best)
+          # end
+          IO.puts("OK: #{cost} & #{n_steps < max_steps} & #{!goes_back} & #{next_best < best}")
+
+          print(last_pos_hist, map, size, {x + dir_x, y + dir_y})
           next_state
+        else
+          IO.puts(
+            "FAILURE: #{cost} & #{n_steps < max_steps} & #{!goes_back} & #{next_best < best}"
+          )
+
+          # {x, y, points, last_pos_hist, last_dir_steps}
+          print(last_pos_hist, map, size, {x + dir_x, y + dir_y})
+          nil
         end
       end)
       |> Enum.filter(fn x -> x != nil end)
@@ -106,11 +135,19 @@ defmodule Day17 do
   end
 
   def print(history, map, size) do
+    print(history, map, size, {-1, -1})
+  end
+
+  def print(history, map, size, special) do
     0..(size - 1)
     |> Enum.map(fn y ->
       0..(size - 1)
       |> Enum.map(fn x ->
-        if Enum.member?(history, {x, y}), do: "*", else: map[{x, y}]
+        cond do
+          special == {x, y} -> "?"
+          Enum.member?(history, {x, y}) -> "#"
+          true -> map[{x, y}]
+        end
       end)
       |> Enum.join("")
       |> IO.puts()
