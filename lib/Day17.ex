@@ -76,12 +76,12 @@ defmodule Day17 do
           else: [{0, 1}, {1, 0}, {0, -1}, {-1, 0}]
         )
 
-      if {x, y} == {8, 4} do
-        IO.inspect("MOVES steps:#{steps} min:#{min_steps} 1:#{steps <= min_steps}, 2:#{last_dir != {-1, -1}}")
-        IO.inspect(last_pos_hist)
-        IO.inspect(last_dir_steps)
-        IO.inspect(possible_moves)
-      end
+      # if {x, y} == {8, 4} do
+      #   IO.inspect("MOVES steps:#{steps} min:#{min_steps} 1:#{steps <= min_steps}, 2:#{last_dir != {-1, -1}}")
+      #   IO.inspect(last_pos_hist)
+      #   IO.inspect(last_dir_steps)
+      #   IO.inspect(possible_moves)
+      # end
 
       possible_moves
       |> Enum.map(fn dir ->
@@ -187,7 +187,7 @@ defmodule Mix.Tasks.Day17 do
   use Mix.Task
 
   def run(_) do
-    {:ok, input} = File.read("inputs/17-test1.txt")
+    {:ok, input} = File.read("inputs/17.txt")
     IO.puts("--- Part 1 ---")
     IO.puts(Day17.solve1(input))
     IO.puts("")
