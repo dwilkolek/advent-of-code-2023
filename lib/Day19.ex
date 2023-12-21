@@ -127,7 +127,7 @@ defmodule Mix.Tasks.Day19 do
   use Mix.Task
 
   def run(_) do
-    {:ok, input} = File.read("inputs/19-test1.txt")
+    {:ok, input} = File.read("inputs/19.txt")
     IO.puts("--- Part 1 ---")
     IO.puts(Day19.solve1(input))
     IO.puts("")
