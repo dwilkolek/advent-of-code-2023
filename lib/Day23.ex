@@ -1,9 +1,9 @@
 defmodule Day23 do
-  def solve1(input) do
+  def solve1(_input) do
 
   end
 
-  def solve2(input) do
+  def solve2(_input) do
 
   end
 end
