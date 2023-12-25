@@ -1,7 +1,6 @@
 defmodule Day19 do
   def solve1(input) do
-    {queues, items} = parse(input) |> IO.inspect()
-
+    {queues, items} = parse(input)
     items
     |> Enum.map(fn item ->
       eval_rules(item, "in", queues)
@@ -14,66 +13,122 @@ defmodule Day19 do
   end
 
   def solve2(input) do
-    {queues, _} = parse(input) |> IO.inspect()
-    # hehe, it will take too long... need to make it on ranges 🙄
-    0..4000
-    |> Enum.map(fn x ->
-      0..4000 |> Enum.each(fn m ->
-        IO.puts("#{x}:#{m}")
-        0..4000 |> Enum.each(fn a ->
-          0..4000 |> Enum.each(fn s ->
-            eval_rules(
-              %{
-              "x" => x,
-              "m" => m,
-              "a" => a,
-              "s" => s
-            }, "in", queues)
-          end)
-        end)
-      end)
-    end)
-    |> List.flatten()
-    |> Enum.filter(& &1)
-    |> Enum.map(fn item ->
-      Map.get(item, "x") + Map.get(item, "m") + Map.get(item, "a") + Map.get(item, "s")
+    {queues, _} = parse(input)
+
+    eval_rules2(
+      {%{
+         "x" => 1..4000,
+         "m" => 1..4000,
+         "a" => 1..4000,
+         "s" => 1..4000
+       }, "in"},
+      queues,
+      []
+    )
+    |> Enum.map(fn m ->
+      Enum.count(m["x"]) * Enum.count(m["m"]) * Enum.count(m["a"]) * Enum.count(m["s"])
     end)
     |> Enum.sum()
   end
 
-  def eval_rules(item, label, queues) do
-    target = queues[label]
-    |> Enum.find_value(fn rule ->
-      # {type, prop, comp, value, target} = rule
-      # IO.inspect(rule)
+  def eval_rules2({item, label}, queues, done) do
+    {queue, left} =
+      queues[label]
+      |> List.foldl({[], {item, label}}, fn rule, {processed, left} ->
+        if left do
+          {item, label} = left
 
-      case rule do
-        {:noop, target} ->
-          target
+          case rule do
+            {:noop, target} ->
+              {[{item, target} | processed], nil}
 
-        {:eval, prop, ">", value, target} ->
-          # IO.puts("> #{Map.get(item, prop)}, #{value} --> #{target}")
-          if Map.get(item, prop) > value do
-            target
+            {:eval, prop, ">", value, target} ->
+              index = Enum.find_index(Map.get(item, prop), fn x -> x === value + 1 end)
+
+              if index do
+                {a, b} = Range.split(Map.get(item, prop), index)
+
+                {[{Map.put(item, prop, b), target} | processed], {Map.put(item, prop, a), label}}
+              else
+                _first..last//_ = Map.get(item, prop)
+
+                if last > value do
+                  {[{item, target} | processed], nil}
+                else
+                  {processed, {item, label}}
+                end
+              end
+
+            {:eval, prop, "<", value, target} ->
+              index = Enum.find_index(Map.get(item, prop), fn x -> x === value end)
+
+              if index do
+                {a, b} = Range.split(Map.get(item, prop), index)
+
+                {[{Map.put(item, prop, a), target} | processed], {Map.put(item, prop, b), label}}
+              else
+                _first..last//_ = Map.get(item, prop)
+
+                if last < value do
+                  {[{item, target} | processed], nil}
+                else
+                  {processed, {item, label}}
+                end
+              end
           end
-
-        {:eval, prop, "<", value, target} ->
-          # IO.puts("< #{Map.get(item, prop)}, #{value} --> #{target}")
-          if Map.get(item, prop) < value do
-            target
-          end
-
-        _ ->
-          # IO.puts("????")
-          nil
+        else
+          {processed, nil}
         end
       end)
 
-      case target do
-        "A" -> item
-        "R" -> nil
-        _ -> eval_rules(item, target, queues)
+    if left != nil do
+      IO.inspect(left)
+      throw("oops")
+    end
+
+    queue
+    # |> IO.inspect()
+    |> Enum.filter(fn {m, _} ->
+      Range.to_list(m["x"]) != [] && Range.to_list(m["m"]) != [] && Range.to_list(m["a"]) != [] &&
+        Range.to_list(m["s"]) != []
+    end)
+    |> Enum.reduce(done, fn {item, label}, done ->
+      case label do
+        "A" -> [item | done]
+        "R" -> done
+        _ -> eval_rules2({item, label}, queues, done)
       end
+    end)
+  end
+
+  def eval_rules(item, label, queues) do
+    target =
+      queues[label]
+      |> Enum.find_value(fn rule ->
+        case rule do
+          {:noop, target} ->
+            target
+
+          {:eval, prop, ">", value, target} ->
+            if Map.get(item, prop) > value do
+              target
+            end
+
+          {:eval, prop, "<", value, target} ->
+            if Map.get(item, prop) < value do
+              target
+            end
+
+          _ ->
+            nil
+        end
+      end)
+
+    case target do
+      "A" -> item
+      "R" -> nil
+      _ -> eval_rules(item, target, queues)
+    end
   end
 
   def parse(input) do
@@ -100,7 +155,6 @@ defmodule Day19 do
     queues
     |> String.split("\n")
     |> Enum.map(fn qdef ->
-      IO.inspect(qdef)
       [label, rules_str] = qdef |> String.replace_suffix("}", "") |> String.split("{")
 
       rules =
@@ -111,7 +165,9 @@ defmodule Day19 do
             {:noop, rs}
           else
             [<<param, operator, rem::binary>>, target_label] = rs |> String.split(":")
-            {:eval, List.to_string([param]), List.to_string([operator]), String.to_integer(rem), List.to_string([target_label])}
+
+            {:eval, List.to_string([param]), List.to_string([operator]), String.to_integer(rem),
+             List.to_string([target_label])}
           end
         end)
 
